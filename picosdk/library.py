@@ -1074,6 +1074,7 @@ class Library(object):
                                               f"Valid sources are: {list(kwargs.keys())}")
 
             conditions = trigger_conditions(**kwargs)
+            logger.info(f"[set_trigger_conditions] Trigger conditions: {conditions}")
             args = (device.handle, conditions, 1)
             converted_args = self._convert_args(self._set_trigger_channel_conditions_v2, args)
             status = self._set_trigger_channel_conditions_v2(*converted_args)
