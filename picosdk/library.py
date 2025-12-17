@@ -12,7 +12,7 @@ from __future__ import print_function
 import json
 import re
 import sys
-from ctypes import c_int16, c_int32, c_uint32, c_float, c_void_p, create_string_buffer, byref
+from ctypes import c_int16, c_int32, c_uint32, c_float, c_void_p, create_string_buffer, byref, sizeof
 from ctypes.util import find_library
 import collections
 import time
@@ -1183,7 +1183,7 @@ class Library(object):
 
         converted = []
         for arg, argtype in zip(args, func.argtypes):
-            logger.info(f'[_convert_args]: arg: {arg} argtype: {argtype}')
+            logger.info(f'[_convert_args]: arg: {arg} argtype: {argtype.__name__} size: {sizeof(argtype)}')
             # Handle byref parameters
             if argtype == c_void_p and arg is not None:
                 converted.append(byref(arg))
