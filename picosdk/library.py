@@ -21,6 +21,7 @@ import picosdk.constants as constants
 from base64 import b64encode
 import numpy
 from numpy.lib.format import dtype_to_descr
+from robot.api import logger
 
 from picosdk.errors import PicoError, CannotFindPicoSDKError, CannotOpenPicoSDKError, DeviceNotFoundError, \
     ArgumentOutOfRangeError, ValidRangeEnumValueNotValidForThisDevice, DeviceCannotSegmentMemoryError, \
@@ -797,6 +798,8 @@ class Library(object):
         Returns:
             float: The approximate time (in seconds) which the device will take to capture with these settings
         """
+        logger.info(f'[run_block]: pre_trigger_samples: {pre_trigger_samples}; '
+                    f'post_trigger_samples: {post_trigger_samples}; timebase_id: {timebase_id}')
         return self._python_run_block(device.handle,
                                       pre_trigger_samples,
                                       post_trigger_samples,
@@ -834,6 +837,8 @@ class Library(object):
         else:
             raise NotImplementedError("not done other driver types yet")
 
+        logger.info(f'[_python_run_block]: time_indisposed: {time_indisposed} {time_indisposed.value}'
+                    f'return value: {float(time_indisposed.value) * 0.001}')
         return float(time_indisposed.value) * 0.001
 
     @requires_device()
@@ -1186,5 +1191,5 @@ class Library(object):
                 converted.append(argtype(arg))
             else:
                 converted.append(None)
+        logger.info(f'[_convert_args]: converted args: {tuple(converted)}')
         return tuple(converted)
-
