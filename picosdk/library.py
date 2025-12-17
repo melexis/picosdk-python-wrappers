@@ -1183,6 +1183,7 @@ class Library(object):
 
         converted = []
         for arg, argtype in zip(args, func.argtypes):
+            logger.info(f'[_convert_args]: arg: {arg} argtype: {argtype}')
             # Handle byref parameters
             if argtype == c_void_p and arg is not None:
                 converted.append(byref(arg))
