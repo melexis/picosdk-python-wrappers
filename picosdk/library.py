@@ -1019,7 +1019,7 @@ class Library(object):
             else:
                 scope_data[channel] = numpy.array(adc_to_mv(buffer, max_voltage[channel],
                                                             self.maximum_value(device))) * probe_attenuation[channel]
-
+        logger.info(f"[get_values]: time_interval_sec: {time_interval_sec}")
         time_sec = numpy.linspace(0,
                                   (samples - 1) * time_interval_sec,
                                   samples)
