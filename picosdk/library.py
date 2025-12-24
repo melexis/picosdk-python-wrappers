@@ -766,9 +766,9 @@ class Library(object):
         """
         if (hasattr(self, '_set_trigger_digital_port_properties') and
                 len(self._set_trigger_digital_port_properties.argtypes) == 3):
-            digital_properties = getattr(self, self.name.upper() +'_DIGITAL_CHANNEL_DIRECTIONS', None)
-            digital_channels =  getattr(self, self.name.upper() +'_DIGITAL_CHANNEL', None)
-            directions = getattr(self, self.name.upper() +'_DIGITAL_DIRECTION', None)
+            digital_properties = getattr(self, self.name.upper() + '_DIGITAL_CHANNEL_DIRECTIONS', None)
+            digital_channels =  getattr(self, self.name.upper() + '_DIGITAL_CHANNEL', None)
+            directions = getattr(self, self.name.upper() + '_DIGITAL_DIRECTION', None)
             if digital_properties and digital_channels and directions:
                 digital_channel = self.name.upper() + '_DIGITAL_CHANNEL_' + str(channel_number)
                 direction = self.name.upper() + '_DIGITAL_' + direction
@@ -976,8 +976,8 @@ class Library(object):
 
         Args:
             device (picosdk.device.Device): Device instance
-            buffers (dict): Dictionary of buffers where the data will be stored. The keys are channel names or port numbers,
-                            and the values are numpy arrays.
+            buffers (dict): Dictionary of buffers where the data will be stored. The keys are channel names or
+                            port numbers, and the values are numpy arrays.
             samples (int): The number of samples to retrieve from the scope.
             time_interval_sec (float): The time interval between samples in seconds. (obtained from get_timebase)
             max_voltage (dict): The maximum voltage of the range used per channel. (obtained from set_channel)
@@ -1005,6 +1005,9 @@ class Library(object):
             converted_args = self._convert_args(self._get_values, args)
             status = self._get_values(*converted_args)
 
+            if samples != no_of_samples.value:
+                raise InvalidCaptureParameters("get_values could not retrieve the requested number of samples. "
+                                               f"Requested: {samples}, Retrieved: {no_of_samples.value}")
             if status != self.PICO_STATUS['PICO_OK']:
                 raise InvalidCaptureParameters(f"get_values failed ({constants.pico_tag(status)})")
         else:
@@ -1072,7 +1075,7 @@ class Library(object):
                                save_to_file, probe_attenuation)
 
     @requires_device()
-    def set_trigger_conditions(self, device, trigger_input):
+    def set_trigger_conditions_v2(self, device, trigger_input):
         """Sets up trigger conditions on the scope's inputs.
         Sets trigger state to TRUE for given `trigger_input`, the rest will be DONT CARE
 
