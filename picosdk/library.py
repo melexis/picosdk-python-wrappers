@@ -6,9 +6,6 @@ Definition of the Library class, which is the abstract representation of a picot
 Note: Many of the functions in this class are missing: these are populated by the psN000(a).py modules, which subclass
 this type and attach the missing methods.
 """
-
-from __future__ import print_function
-
 import json
 import re
 import sys
@@ -502,7 +499,7 @@ class Library(object):
             if not digital_ports:
                 raise NotImplementedError("This device doesn't support digital ports")
             port_id = digital_ports[self.name.upper() + "_DIGITAL_PORT" + str(port_number)]
-            args = (device.handle, port_id, enabled, logic_level)
+            args = (device.handle, port_id, 1 if enabled else 0, logic_level)
             converted_args = self._convert_args(self._set_digital_port, args)
             status = self._set_digital_port(*converted_args)
             if status != self.PICO_STATUS['PICO_OK']:
@@ -744,9 +741,8 @@ class Library(object):
                     threshold_direction_id = threshold_directions[self.name.upper() + f'_{direction.upper()}']
                 else:
                     raise NotImplementedError("This device doesn't support threshold direction")
-
-            args = (device.handle, enable, self.PICO_CHANNEL[channel], adc_threshold,
-                   threshold_direction_id, delay, auto_trigger_ms)
+            args = (device.handle, 1 if enable else 0, self.PICO_CHANNEL[channel], adc_threshold,
+                    threshold_direction_id, delay, auto_trigger_ms)
             converted_args = self._convert_args(self._set_simple_trigger, args)
             status = self._set_simple_trigger(*converted_args)
 
@@ -1136,9 +1132,9 @@ class Library(object):
         """
         if hasattr(self, '_set_trigger_channel_properties'):
             args = (device.handle, threshold_upper, threshold_upper_hysteresis,
-                   threshold_lower, threshold_lower_hysteresis,
-                   self.PICO_CHANNEL[channel], self.PICO_THRESHOLD_DIRECTION[threshold_mode],
-                   aux_output_enable, auto_trigger_milliseconds)
+                    threshold_lower, threshold_lower_hysteresis,
+                    self.PICO_CHANNEL[channel], self.PICO_THRESHOLD_DIRECTION[threshold_mode],
+                    1 if aux_output_enable else 0, auto_trigger_milliseconds)
             converted_args = self._convert_args(self._set_trigger_channel_properties, args)
             status = self._set_trigger_channel_properties(*converted_args)
 
