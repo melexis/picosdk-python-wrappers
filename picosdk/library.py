@@ -741,6 +741,8 @@ class Library(object):
                     threshold_direction_id = threshold_directions[self.name.upper() + f'_{direction.upper()}']
                 else:
                     raise NotImplementedError("This device doesn't support threshold direction")
+            if not enable:
+                logger.warn("Disabling trigger using set_simple_trigger. ")
             args = (device.handle, 1 if enable else 0, self.PICO_CHANNEL[channel], adc_threshold,
                     threshold_direction_id, delay, auto_trigger_ms)
             converted_args = self._convert_args(self._set_simple_trigger, args)
