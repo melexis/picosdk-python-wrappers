@@ -774,6 +774,7 @@ class Library(object):
                                                 direction=directions[direction])
                 args = (device.handle, properties, 1)
                 converted_args = self._convert_args(self._set_trigger_digital_port_properties, args)
+                logger.info(f'set_digital_channel_trigger: converted_args: {converted_args}')
                 status = self._set_trigger_digital_port_properties(*converted_args)
                 if status != self.PICO_STATUS['PICO_OK']:
                     raise InvalidTriggerParameters("set_trigger_digital_port_properties failed "
