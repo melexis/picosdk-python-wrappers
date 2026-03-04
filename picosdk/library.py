@@ -202,7 +202,21 @@ class SingletonScopeDataDict(dict):
                     return port_data[row_index]
 
                 except (IndexError, ValueError, KeyError) as e:
-                    raise ValueError(f"Invalid digital channel {key}: {str(e)}")
+                    if isinstance(e, KeyError):
+                        available_keys = ", ".join(map(str, sorted(self.keys()))) if self.keys() else "None"
+                        raise ValueError(
+                            f"Could not retrieve data for digital channel {key}. The data for the corresponding "
+                            f"digital port ({port_number}) has not been loaded into the data dictionary. "
+                            f"Available data keys are: [{available_keys}]."
+                        ) from e
+                    elif isinstance(e, IndexError):
+                        raise ValueError(
+                            f"Could not retrieve data for digital channel {key}. The data for the corresponding "
+                            f"digital port ({port_number}) appears to be corrupted or in an unexpected format."
+                        ) from e
+                    else:
+                        raise ValueError(f"An unexpected error occurred while processing digital channel '{key}': {e}"
+                                         ) from e
 
         # Handle direct port access (0-1) or analog channels
         return super().__getitem__(key)
@@ -991,7 +1005,8 @@ class Library(object):
             probe_attenuation (dict): The attenuation factor of the probe used per the channel (1 or 10).
 
         Returns:
-            Tuple of (captured data including time, overflow warnings)
+            scope_data (SingletonScopeDataDict): The captured scope data.
+            overflow_warning (dict): A dictionary indicating which channels had an overflow.
         """
         scope_data = SingletonScopeDataDict()
         scope_data.clean_dict()
@@ -1030,17 +1045,48 @@ class Library(object):
 
         overflow_warning = {}
         if overflow.value:
+            overflow_warning["bit field"] = bin(overflow.value)[2:]
             for channel in buffers.keys():
-                if overflow.value & (1 >> self.PICO_CHANNEL[channel]):
+                if channel in self.PICO_CHANNEL and (overflow.value & (1 << self.PICO_CHANNEL[channel])):
                     overflow_warning[channel] = True
 
         return scope_data, overflow_warning
 
     @requires_device()
+    def store_values(self, device, buffers, samples, time_interval_sec, max_voltage={}, start_index=0,
+                     downsample_ratio=0, downsample_ratio_mode="NONE", segment_index=0, output_dir=".",
+                     filename="data", save_to_file=False, probe_attenuation=DEFAULT_PROBE_ATTENUATION):
+        """Same as `get_values` but only returns overflow warnings and keeps the data stored in SingletonScopeDataDict.
+
+        Args:
+            device (picosdk.device.Device): Device instance
+            buffers (dict): Dictionary of buffers where the data will be stored. The keys are channel names or
+                            port numbers, and the values are numpy arrays.
+            samples (int): The number of samples to retrieve from the scope.
+            time_interval_sec (float): The time interval between samples in seconds. (obtained from get_timebase)
+            max_voltage (dict): The maximum voltage of the range used per channel. (obtained from set_channel)
+            start_index (int): A zero-based index that indicates the start point for data collection. It is measured in
+                               sample intervals from the start of the buffer.
+            downsample_ratio (int): The downsampling factor that will be applied to the raw data.
+            downsample_ratio_mode (str): Which downsampling mode to use.
+            segment_index (int): Memory segment index
+            output_dir (str): The output directory where the json file will be saved.
+            filename (str): The name of the json file where the data will be stored
+            save_to_file (bool): True if the data has to be saved to a file on the disk, False otherwise
+            probe_attenuation (dict): The attenuation factor of the probe used per the channel (1 or 10).
+
+        Returns:
+            overflow warnings (dict): A dictionary indicating which channels had an overflow.
+        """
+        return self.get_values(device, buffers, samples, time_interval_sec, max_voltage, start_index,
+                               downsample_ratio, downsample_ratio_mode, segment_index, output_dir,
+                               filename, save_to_file, probe_attenuation)[1]
+
+    @requires_device()
     def set_and_load_data(self, device, active_sources, buffer_length, time_interval_sec, max_voltage={},
-                    segment_index=0, ratio_mode='NONE', start_index=0,
-                    downsample_ratio=0, downsample_ratio_mode="NONE", probe_attenuation=DEFAULT_PROBE_ATTENUATION,
-                    output_dir=".", filename="data", save_to_file=False):
+                          segment_index=0, ratio_mode='NONE', start_index=0,
+                          downsample_ratio=0, downsample_ratio_mode="NONE", probe_attenuation=DEFAULT_PROBE_ATTENUATION,
+                          output_dir=".", filename="data", save_to_file=False):
         """Load values from the device.
 
         Combines set_data_buffer and get_values to load values from the device.
@@ -1063,7 +1109,7 @@ class Library(object):
             save_to_file (bool): True if the data has to be saved to a file on the disk, False otherwise
 
         Returns:
-            Tuple of (captured data including time, overflow warnings)
+            overflow warnings (dict): A dictionary indicating which channels had an overflow.
         """
         buffers = {}
         for source in active_sources:
