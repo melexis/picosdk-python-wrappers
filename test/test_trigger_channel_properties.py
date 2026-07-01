@@ -95,3 +95,18 @@ class TriggerChannelPropertiesTest(unittest.TestCase):
         self.assertEqual(props.thresholdLowerHysteresis, 50)
         self.assertEqual(props.channel, 0)
         self.assertEqual(props.thresholdMode, 0)  # LEVEL mapped to 0
+
+    def test_set_null_trigger_calls_driver_with_device(self):
+        driver = DummyDriver()
+        device = DummyDevice(driver)
+
+        called_device = None
+        def mock_set_null_trigger(device, channel="A"):
+            nonlocal called_device
+            called_device = device
+
+        driver.set_null_trigger = mock_set_null_trigger
+        device.set_null_trigger()
+
+        self.assertEqual(called_device, device)
+

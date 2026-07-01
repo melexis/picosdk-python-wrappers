@@ -414,7 +414,7 @@ class Device(object):
         Trigger is not enabled, so the device will not wait for a trigger
         before capturing data.
         """
-        self.driver.set_null_trigger()
+        self.driver.set_null_trigger(self)
 
     @requires_open()
     def set_simple_trigger(self, channel, enable=True, threshold_mv=500, direction="FALLING", delay=0,
