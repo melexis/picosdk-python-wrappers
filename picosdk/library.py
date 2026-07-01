@@ -1218,12 +1218,42 @@ class Library(object):
             PicoError: If the function fails to set the properties.
         """
         if hasattr(self, '_set_trigger_channel_properties'):
-            args = (device.handle, threshold_upper, threshold_upper_hysteresis,
-                    threshold_lower, threshold_lower_hysteresis,
-                    self.PICO_CHANNEL[channel], self.PICO_THRESHOLD_DIRECTION[threshold_mode],
-                    1 if aux_output_enable else 0, auto_trigger_milliseconds)
-            converted_args = self._convert_args(self._set_trigger_channel_properties, args)
-            status = self._set_trigger_channel_properties(*converted_args)
+            trigger_channel_properties = getattr(self, self.name.upper() + '_TRIGGER_CHANNEL_PROPERTIES', None)
+            threshold_modes = getattr(self, self.name.upper() + '_THRESHOLD_MODE', None)
+
+            if not trigger_channel_properties or not threshold_modes:
+                raise PicoError(f"Trigger channel properties or threshold modes not defined for {self.name} driver.")
+
+            threshold_mode_val = threshold_modes[self.name.upper() + '_' + threshold_mode.upper()]
+
+            kwargs = {}
+            for field in trigger_channel_properties._fields_:
+                field_name = field[0]
+                if field_name == "thresholdUpper":
+                    kwargs[field_name] = threshold_upper
+                elif field_name == "thresholdUpperHysteresis":
+                    kwargs[field_name] = threshold_upper_hysteresis
+                elif field_name == "thresholdHysteresis":
+                    kwargs[field_name] = threshold_upper_hysteresis
+                elif field_name == "thresholdLower":
+                    kwargs[field_name] = threshold_lower
+                elif field_name == "thresholdLowerHysteresis":
+                    kwargs[field_name] = threshold_lower_hysteresis
+                elif field_name == "channel":
+                    kwargs[field_name] = self.PICO_CHANNEL[channel] if channel in self.PICO_CHANNEL else channel
+                elif field_name == "thresholdMode":
+                    kwargs[field_name] = threshold_mode_val
+
+            properties = trigger_channel_properties(**kwargs)
+            func = self._set_trigger_channel_properties
+
+            if len(func.argtypes) == 4:
+                args = (device.handle, properties, 1, auto_trigger_milliseconds)
+            else:
+                args = (device.handle, properties, 1, 1 if aux_output_enable else 0, auto_trigger_milliseconds)
+
+            converted_args = self._convert_args(func, args)
+            status = func(*converted_args)
 
             if status != self.PICO_STATUS['PICO_OK']:
                 raise PicoError(f"set_trigger_channel_properties failed ({constants.pico_tag(status)})")
